@@ -34,13 +34,3 @@ variable "environment" {
   type = "string"
   default = "env"
 }
-
-variable "service_group" {
-  description = "Naming Convention: The name for the service group or s3 bucket name suffix"
-  type = "string"
-}
-
-variable "objects_prefix" {
-  description = "Naming Convention: objects path prefix for lifecycle management"
-  type = "string"
-}
