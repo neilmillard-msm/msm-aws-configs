@@ -1,9 +1,16 @@
-resource "aws_s3_bucket" "${var.account}-${var.user_base}-${var.environment}-${var.service_group}" {
+variable "account" {}
+variable "user_base" {}
+variable "environment" {}
+variable "service_group" {}
+variable "objects_prefix" {}
+variable "log_bucket" {}
+
+resource "aws_s3_bucket" "default_bucket" {
   bucket = "${var.account}-${var.user_base}-${var.environment}-${var.service_group}"
   acl    = "private"
 
   logging {
-    target_bucket = "${aws_s3_bucket.log_bucket.id}"
+    target_bucket = "${var.log_bucket}"
     target_prefix = "log/"
   }
 
