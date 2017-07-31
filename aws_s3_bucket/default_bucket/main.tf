@@ -9,6 +9,8 @@ resource "aws_s3_bucket" "default_bucket" {
   bucket = "${var.account}-${var.user_base}-${var.environment}-${var.service_group}"
   acl    = "private"
 
+  force_destroy = true
+
   logging {
     target_bucket = "${var.log_bucket}"
     target_prefix = "log/"

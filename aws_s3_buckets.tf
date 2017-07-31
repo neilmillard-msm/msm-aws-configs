@@ -2,6 +2,8 @@ resource "aws_s3_bucket" "log_bucket" {
   bucket = "msm-gb-any-buckets-log"
   acl    = "log-delivery-write"
 
+  force_destroy = true
+
   lifecycle_rule {
     id      = "log"
     prefix  = "log/"
