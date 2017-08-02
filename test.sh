@@ -6,6 +6,14 @@ echo 'Terraformed!' > mcloud.txt
 echo "-- Get all needed modules"
 terraform get
 echo "-- Refresh infrastructure state"
+for BUCKET in msm-gb-all-bucket2 msm-gb-any-bucket1 msm-gb-any-buckets-log
+do
+    if aws s3api head-bucket --bucket "${BUCKET}" &>/dev/null
+    then
+        terraform import aws_s3_bucket.bucket "${BUCKET}"
+        break
+    fi
+done
 terraform refresh
 echo "-- Create a terraforming plan"
 terraform plan -out mcloud.tfplan
@@ -56,4 +64,5 @@ do
 done
 
 echo "-- Listing available buckets"
-aws s3api list-buckets | jq --raw-output '.Buckets[].Name'
+aws s3api list-buckets | jq --raw-output '.Buckets[].Name' |\
+    grep -e msm-gb-all-bucket2 -e msm-gb-any-bucket1 -e msm-gb-any-buckets-log
