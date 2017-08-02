@@ -17,7 +17,7 @@ resource "aws_s3_bucket" "default_bucket" {
   }
 
   versioning {
-    enabled = false
+    enabled = true
   }
 
   lifecycle_rule {

@@ -1,16 +1,18 @@
 #!/bin/sh -e
 
-echo Create a sample file to put into the bucket
+echo "-- Create a sample file to put into the bucket"
 echo 'Terraformed!' > mcloud.txt
 
-echo Get all needed modules
+echo "-- Get all needed modules"
 terraform get
-echo Create a terraforming plan
+echo "-- Refresh infrastructure state"
+terraform refresh
+echo "-- Create a terraforming plan"
 terraform plan -out mcloud.tfplan
-echo Create / Update the infrastructure
+echo "-- Create / Update the infrastructure"
 terraform apply mcloud.tfplan
 
-echo Test that the buckets are there
+echo "-- Test that the buckets are there"
 aws s3 cp mcloud.txt s3://msm-gb-any-bucket1/objects/mcloud.txt
 aws s3 ls s3://msm-gb-any-bucket1/objects/mcloud.txt
 
@@ -25,28 +27,33 @@ do
     VERSIONS=$(aws s3api list-object-versions --bucket "${BUCKET}" | jq '.Versions')
     MARKERS=$(aws s3api list-object-versions --bucket "${BUCKET}" | jq '.DeleteMarkers')
 
-    echo "Removing all objects from ${BUCKET}"
-    for VERSION in $(echo "${VERSIONS}" | jq -r '.[] | @base64'); do
+    echo "-- Removing all objects from ${BUCKET}"
+    for VERSION in $(echo "${VERSIONS}" | jq --raw-output '.[] | @base64'); do
         VERSION=$(echo "${VERSION}" | base64 --decode)
 
-        KEY=$(echo "${VERSION}" | jq -r .Key)
-        VERSION_ID=$(echo "${VERSION}" | jq -r .VersionId)
+        KEY=$(echo "${VERSION}" | jq --raw-output .Key)
+        VERSION_ID=$(echo "${VERSION}" | jq --raw-output .VersionId)
         CMD="aws s3api delete-object --bucket ${BUCKET} --key ${KEY} --version-id ${VERSION_ID}"
         echo $CMD
         $CMD
     done
 
-    echo "Removing all delete markers from ${BUCKET}"
-    for marker in $(echo "${MARKERS}" | jq -r '.[] | @base64'); do
-        marker=$(echo ${marker} | base64 --decode)
+    test "${MARKERS}" = "null" && continue
 
-        KEY=`echo $marker | jq -r .Key`
-        VERSION_ID=`echo $marker | jq -r .VersionId `
+    echo "-- Removing all delete markers from ${BUCKET}"
+    for MARKER in $(echo "${MARKERS}" | jq --raw-output '.[] | @base64'); do
+        MARKER=$(echo "${MARKER}" | base64 --decode)
+
+        KEY=$(echo "${MARKER}" | jq --raw-output .Key)
+        VERSION_ID=$(echo "${MARKER}" | jq --raw-output .VersionId)
         CMD="aws s3api delete-object --bucket ${BUCKET} --key ${KEY} --version-id ${VERSION_ID}"
         echo $CMD
         $CMD
     done
 
-    echo "Removing ${BUCKET}"
+    echo "-- Removing ${BUCKET}"
     aws s3api delete-bucket --bucket ${BUCKET}
 done
+
+echo "-- Listing available buckets"
+aws s3api list-buckets | jq --raw-output '.Buckets[].Name'
